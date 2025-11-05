@@ -1,0 +1,7 @@
+
+reflex==0.8.17
+openai
+python-dotenv
+anthropic
+reportlab
+pillow
