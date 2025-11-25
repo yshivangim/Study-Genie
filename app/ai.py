@@ -4,16 +4,15 @@ from openai import OpenAI
 import json
 import logging
 import base64
-from dotenv import load_dotenv
-
-load_dotenv()
 
 
 def get_client():
     """Initialize OpenAI client lazily."""
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        logging.warning("OPENAI_API_KEY is not set in environment variables.")
+        error_msg = "OPENAI_API_KEY is not set. Please ensure it is defined in your environment variables."
+        logging.error(error_msg)
+        raise ValueError(error_msg)
     return OpenAI(api_key=api_key)
 
 
