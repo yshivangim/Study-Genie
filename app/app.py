@@ -1,5 +1,7 @@
 import reflex as rx
 from app.pages.index import index
+from app.pages.login import login_page
+from app.pages.register import registration_page
 from app.database import create_db_and_tables
 
 app = rx.App(
@@ -14,4 +16,6 @@ app = rx.App(
     ],
     style={"font_family": "Poppins, sans-serif"},
 )
-app.add_page(index)
+app.add_page(index, route="/")
+app.add_page(login_page, route="/login")
+app.add_page(registration_page, route="/register")

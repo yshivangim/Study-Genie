@@ -9,6 +9,7 @@ from app.database import (
     create_db_and_tables,
 )
 from app.utils import create_pdf_from_content, create_txt_from_content
+from app.states.auth_state import AuthState
 
 StudyMode = Literal["Notes", "Summary", "Explain", "Quiz", "Flashcards"]
 
@@ -69,8 +70,11 @@ class StudyGenieState(rx.State):
     @rx.event
     async def on_load(self):
         """Load history from database on app startup."""
+        auth_state = await self.get_state(AuthState)
+        if not auth_state.is_authenticated or not auth_state.user:
+            return rx.redirect("/login")
         await create_db_and_tables()
-        self.history = await get_all_history()
+        self.history = await get_all_history(auth_state.user["id"])
 
     @rx.event
     def set_mode(self, mode: StudyMode):
@@ -115,6 +119,9 @@ class StudyGenieState(rx.State):
         from app.ai import generate_content, generate_content_from_image
 
         async with self:
+            auth_state = await self.get_state(AuthState)
+            if not auth_state.is_authenticated or not auth_state.user:
+                return rx.redirect("/login")
             self.is_loading = True
             self.user_input = form_data.get("user_input", "")
             self.generated_content = ""
@@ -140,13 +147,16 @@ class StudyGenieState(rx.State):
                     for card in generated_data.get("cards", []):
                         card["flipped"] = False
                 self.generated_content = generated_data
-                history_item = await add_history(
-                    topic=self.user_input or f"Image analysis ({self.image})",
-                    mode=self.current_mode,
-                    content=json.dumps(self.generated_content),
-                )
-                if history_item:
-                    self.history.insert(0, history_item)
+                auth_state = await self.get_state(AuthState)
+                if auth_state.is_authenticated and auth_state.user:
+                    history_item = await add_history(
+                        topic=self.user_input or f"Image analysis ({self.image})",
+                        mode=self.current_mode,
+                        content=json.dumps(self.generated_content),
+                        user_id=auth_state.user["id"],
+                    )
+                    if history_item:
+                        self.history.insert(0, history_item)
             else:
                 print("AI content generation failed.")
             self.is_loading = False
@@ -155,6 +165,10 @@ class StudyGenieState(rx.State):
     @rx.event
     async def handle_upload(self, files: list[rx.UploadFile]):
         """Handle file uploads."""
+        auth_state = await self.get_state(AuthState)
+        if not auth_state.is_authenticated:
+            yield rx.toast.error("Please log in to upload files.")
+            return
         if not files:
             yield rx.toast.error("No files selected.")
             return
@@ -169,16 +183,26 @@ class StudyGenieState(rx.State):
         yield rx.toast.success(f"Uploaded {file.name}")
 
     @rx.event
-    def load_from_history(self, history_item: GeneratedContentHistory):
+    async def load_from_history(self, history_item: GeneratedContentHistory):
         """Load content from a history item."""
+        auth_state = await self.get_state(AuthState)
+        if not auth_state.is_authenticated:
+            yield rx.redirect("/login")
+            return
+        if history_item["user_id"] != auth_state.user["id"]:
+            yield rx.toast.error("Access denied.")
+            return
         self.current_mode = history_item["mode"]
         self.user_input = history_item["topic"]
         self.generated_content = json.loads(history_item["content"])
         self.image = ""
 
     @rx.event
-    def download_pdf(self):
+    async def download_pdf(self):
         """Download content as PDF."""
+        auth_state = await self.get_state(AuthState)
+        if not auth_state.is_authenticated:
+            return rx.redirect("/login")
         if not self.generated_content:
             return
         pdf_bytes = create_pdf_from_content(
@@ -189,8 +213,11 @@ class StudyGenieState(rx.State):
         )
 
     @rx.event
-    def download_txt(self):
+    async def download_txt(self):
         """Download content as TXT."""
+        auth_state = await self.get_state(AuthState)
+        if not auth_state.is_authenticated:
+            return rx.redirect("/login")
         if not self.generated_content:
             return
         txt_content = create_txt_from_content(self.generated_content, self.current_mode)

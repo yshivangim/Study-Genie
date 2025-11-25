@@ -1,5 +1,6 @@
 import reflex as rx
 from app.state import StudyGenieState
+from app.states.auth_state import AuthState
 
 
 def nav_item(icon: str, text: str, selected: rx.Var[bool]) -> rx.Component:
@@ -16,6 +17,27 @@ def nav_item(icon: str, text: str, selected: rx.Var[bool]) -> rx.Component:
         ),
         on_click=lambda: StudyGenieState.set_mode(text),
         href="#",
+    )
+
+
+def user_profile() -> rx.Component:
+    return rx.el.div(
+        rx.el.div(
+            rx.el.div(
+                rx.el.p(AuthState.user["username"].to(str), class_name="font-semibold"),
+                rx.el.p(
+                    AuthState.user["email"].to(str), class_name="text-xs text-gray-500"
+                ),
+                class_name="grid gap-0.5 text-xs",
+            ),
+            class_name="flex items-center gap-3",
+        ),
+        rx.el.button(
+            rx.icon(tag="log-out", class_name="h-4 w-4"),
+            on_click=AuthState.logout,
+            class_name="p-2 rounded-md hover:bg-gray-100",
+        ),
+        class_name="flex items-center justify-between border-t p-4",
     )
 
 
@@ -52,7 +74,8 @@ def sidebar() -> rx.Component:
                 ),
                 class_name="flex-1 overflow-auto py-4 flex flex-col items-start px-4 text-sm font-medium gap-1",
             ),
-            class_name="flex h-full max-h-screen flex-col gap-2",
+            user_profile(),
+            class_name="flex h-full max-h-screen flex-col",
         ),
         class_name="hidden border-r bg-gray-50/50 md:block w-64 shrink-0",
     )

@@ -68,7 +68,10 @@ def user_input_form() -> rx.Component:
             ),
             class_name="w-full",
         ),
-        on_submit=StudyGenieState.process_input,
+        on_submit=[
+            StudyGenieState.handle_upload(rx.upload_files(upload_id="upload_image")),
+            StudyGenieState.process_input,
+        ],
         reset_on_submit=True,
         class_name="w-full",
     )
