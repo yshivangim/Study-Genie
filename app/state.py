@@ -170,7 +170,6 @@ class StudyGenieState(rx.State):
             yield rx.toast.error("Please log in to upload files.")
             return
         if not files:
-            yield rx.toast.error("No files selected.")
             return
         file = files[0]
         upload_data = await file.read()

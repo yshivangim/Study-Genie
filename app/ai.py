@@ -30,8 +30,8 @@ def parse_json_response(response_text: str | None):
 
 PROMPTS = {
     "Notes": {
-        "prompt": "Generate study notes for the given topic/text.",
-        "json_structure": '{"heading": "string", "bullets": ["string", "string", ...], "mnemonic": "string"}',
+        "prompt": "Generate comprehensive study notes for the given topic/text. Include 8-12 detailed bullet points covering key concepts.",
+        "json_structure": '{"heading": "Topic Heading", "bullets": ["Detailed point 1", "Detailed point 2", ...], "mnemonic": "A helpful memory aid"}',
     },
     "Summary": {
         "prompt": "Summarize the given topic/text.",
@@ -67,7 +67,7 @@ def generate_content(mode: str, user_input: str):
                 {"role": "user", "content": user_prompt},
             ],
             temperature=0.7,
-            max_tokens=2000,
+            max_tokens=3000,
             response_format={"type": "json_object"},
         )
         content = response.choices[0].message.content
@@ -107,7 +107,7 @@ def generate_content_from_image(mode: str, user_input: str, image_path: str):
                 {"role": "user", "content": user_content},
             ],
             temperature=0.7,
-            max_tokens=2000,
+            max_tokens=3000,
             response_format={"type": "json_object"},
         )
         content = response.choices[0].message.content
