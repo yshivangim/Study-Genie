@@ -4,10 +4,11 @@ from openai import OpenAI
 import json
 import logging
 import base64
-from dotenv import load_dotenv
 
-load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def get_client():
+    """Initialize OpenAI client lazily."""
+    return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 def parse_json_response(response_text: str | None):
@@ -60,6 +61,7 @@ def generate_content(mode: str, user_input: str):
     system_prompt = f"You are StudyGenie, an AI study assistant. Your goal is to produce clear, concise, and undergraduate-level educational content. Respond ONLY with a valid JSON object matching this structure: {prompt_details['json_structure']}"
     user_prompt = f"{prompt_details['prompt']}\n\n--- TOPIC/TEXT ---\n{user_input}"
     try:
+        client = get_client()
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -100,6 +102,7 @@ def generate_content_from_image(mode: str, user_input: str, image_path: str):
         },
     ]
     try:
+        client = get_client()
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
